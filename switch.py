@@ -5,8 +5,17 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.const import CONF_NAME, CONF_IP_ADDRESS
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.event import async_track_time_interval
+from datetime import timedelta
+import asyncio
+import async_timeout
 from .const import DOMAIN, DEVICE_TYPE_SWITCH, CONF_DEVICE_TYPE
 from .cozylife_device import CozyLifeDevice
+import logging
+
+_LOGGER = logging.getLogger(__name__)
+SCAN_INTERVAL = timedelta(seconds=10)
+TIMEOUT = 5
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -17,7 +26,25 @@ async def async_setup_entry(
     config = config_entry.data
     
     if config[CONF_DEVICE_TYPE] == DEVICE_TYPE_SWITCH:
-        async_add_entities([BetterCozyLifeSwitch(config, config_entry.entry_id)])
+        switch = BetterCozyLifeSwitch(config, config_entry.entry_id)
+        async_add_entities([switch])
+        
+        # Set up regular state refresh
+        async def refresh_state(now=None):
+            """Refresh device state."""
+            try:
+                async with async_timeout.timeout(TIMEOUT):
+                    await hass.async_add_executor_job(switch.update)
+            except asyncio.TimeoutError:
+                _LOGGER.warning("Timeout while updating device state")
+            except Exception as e:
+                _LOGGER.error(f"Error updating device state: {e}")
+
+        # Initial state refresh
+        await refresh_state()
+        
+        # Schedule regular updates
+        async_track_time_interval(hass, refresh_state, SCAN_INTERVAL)
 
 class BetterCozyLifeSwitch(SwitchEntity):
     """Representation of a BetterCozyLife Switch."""
@@ -31,6 +58,33 @@ class BetterCozyLifeSwitch(SwitchEntity):
         self._attr_has_entity_name = True
         self._is_on = False
         self._available = True
+        self._last_update = 0
+        self._error_count = 0
+        self._max_errors = 3
+        
+        # Initialize state
+        self._initialize_state()
+
+    def _initialize_state(self):
+        """Initialize the switch state."""
+        try:
+            state = self._device.query_state()
+            if state is not None:
+                self._is_on = state.get('1', 0) > 0
+                self._available = True
+                self._error_count = 0
+                _LOGGER.info(f"Successfully initialized switch state: {self._is_on}")
+            else:
+                self._available = False
+                _LOGGER.warning("Failed to initialize switch state")
+        except Exception as e:
+            self._available = False
+            _LOGGER.error(f"Error initializing switch state: {e}")
+
+    @property
+    def entity_picture(self):
+        """Return the entity picture."""
+        return "https://raw.githubusercontent.com/IIRoan/bettercozylife/refs/heads/main/icons/bettercozylife.svg"
 
     @property
     def unique_id(self):
@@ -66,19 +120,46 @@ class BetterCozyLifeSwitch(SwitchEntity):
 
     def turn_on(self, **kwargs):
         """Turn the switch on."""
-        if self._device.send_command(True):
-            self._is_on = True
+        try:
+            if self._device.send_command(True):
+                self._is_on = True
+                self._error_count = 0
+                _LOGGER.info(f"Successfully turned on switch: {self._name}")
+            else:
+                self._handle_error("Failed to turn on switch")
+        except Exception as e:
+            self._handle_error(f"Error turning on switch: {e}")
 
     def turn_off(self, **kwargs):
         """Turn the switch off."""
-        if self._device.send_command(False):
-            self._is_on = False
+        try:
+            if self._device.send_command(False):
+                self._is_on = False
+                self._error_count = 0
+                _LOGGER.info(f"Successfully turned off switch: {self._name}")
+            else:
+                self._handle_error("Failed to turn off switch")
+        except Exception as e:
+            self._handle_error(f"Error turning off switch: {e}")
+
+    def _handle_error(self, error_message):
+        """Handle errors and update availability."""
+        self._error_count += 1
+        if self._error_count >= self._max_errors:
+            self._available = False
+            _LOGGER.error(f"{error_message} - Device marked as unavailable")
+        else:
+            _LOGGER.warning(f"{error_message} - Attempt {self._error_count} of {self._max_errors}")
 
     def update(self):
         """Fetch new state data for this switch."""
-        state = self._device.query_state()
-        if state is not None:
-            self._is_on = state.get('1', 0) > 0
-            self._available = True
-        else:
-            self._available = False
+        try:
+            state = self._device.query_state()
+            if state is not None:
+                self._is_on = state.get('1', 0) > 0
+                self._available = True
+                self._error_count = 0
+            else:
+                self._handle_error("Failed to update switch state")
+        except Exception as e:
+            self._handle_error(f"Error updating switch state: {e}")

@@ -13,11 +13,17 @@ from homeassistant.const import (
     UnitOfPower,
 )
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.event import async_track_time_interval
+from datetime import timedelta
+import asyncio
+import async_timeout
 from .const import DOMAIN, DEVICE_TYPE_SWITCH, CONF_DEVICE_TYPE
 from .cozylife_device import CozyLifeDevice
 import logging
 
 _LOGGER = logging.getLogger(__name__)
+SCAN_INTERVAL = timedelta(seconds=10)
+TIMEOUT = 5
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -29,7 +35,25 @@ async def async_setup_entry(
     
     if config[CONF_DEVICE_TYPE] == DEVICE_TYPE_SWITCH:
         device = CozyLifeDevice(config[CONF_IP_ADDRESS])
-        async_add_entities([BetterCozyLifePowerSensor(config, config_entry.entry_id, device)])
+        sensor = BetterCozyLifePowerSensor(config, config_entry.entry_id, device)
+        async_add_entities([sensor])
+        
+        # Set up regular state refresh
+        async def refresh_state(now=None):
+            """Refresh sensor state."""
+            try:
+                async with async_timeout.timeout(TIMEOUT):
+                    await hass.async_add_executor_job(sensor.update)
+            except asyncio.TimeoutError:
+                _LOGGER.warning("Timeout while updating power sensor")
+            except Exception as e:
+                _LOGGER.error(f"Error updating power sensor: {e}")
+
+        # Initial state refresh
+        await refresh_state()
+        
+        # Schedule regular updates
+        async_track_time_interval(hass, refresh_state, SCAN_INTERVAL)
 
 class BetterCozyLifePowerSensor(SensorEntity):
     """Representation of a BetterCozyLife Power Sensor."""
@@ -45,6 +69,9 @@ class BetterCozyLifePowerSensor(SensorEntity):
         self._attr_name = f"{base_name} Power"
         self._state = None
         self._available = True
+        self._error_count = 0
+        self._max_errors = 3
+        self._last_valid_state = None
         
         # Set up sensor attributes
         self._attr_device_class = SensorDeviceClass.POWER
@@ -62,6 +89,30 @@ class BetterCozyLifePowerSensor(SensorEntity):
             model="Smart Switch",
             sw_version="1.0",
         )
+        
+        # Initialize state
+        self._initialize_state()
+
+    def _initialize_state(self):
+        """Initialize the sensor state."""
+        try:
+            state = self._device.query_state()
+            if state is not None:
+                power = state.get('28', 0)
+                self._state = float(power)
+                self._last_valid_state = self._state
+                self._available = True
+                self._error_count = 0
+                _LOGGER.info(f"Successfully initialized power sensor: {self._state}W")
+            else:
+                self._handle_error("Failed to initialize power sensor state")
+        except Exception as e:
+            self._handle_error(f"Error initializing power sensor state: {e}")
+
+    @property
+    def entity_picture(self):
+        """Return the entity picture."""
+        return "https://raw.githubusercontent.com/IIRoan/bettercozylife/refs/heads/main/icons/bettercozylife.svg"
 
     @property
     def available(self) -> bool:
@@ -73,14 +124,26 @@ class BetterCozyLifePowerSensor(SensorEntity):
         """Return the state of the sensor."""
         return self._state
 
+    def _handle_error(self, error_message):
+        """Handle errors and update availability."""
+        self._error_count += 1
+        if self._error_count >= self._max_errors:
+            self._available = False
+            _LOGGER.error(f"{error_message} - Device marked as unavailable")
+        else:
+            _LOGGER.warning(f"{error_message} - Attempt {self._error_count} of {self._max_errors}")
+
     def update(self) -> None:
         """Fetch new state data for the sensor."""
-        state = self._device.query_state()
-        if state is not None:
-            # Get power value from attribute 28 which we identified as power
-            power = state.get('28', 0)
-            self._state = float(power)
-            self._available = True
-        else:
-            self._state = None
-            self._available = False
+        try:
+            state = self._device.query_state()
+            if state is not None:
+                power = state.get('28', 0)
+                self._state = float(power)
+                self._last_valid_state = self._state
+                self._available = True
+                self._error_count = 0
+            else:
+                self._handle_error("Failed to update power sensor state")
+        except Exception as e:
+            self._handle_error(f"Error updating power sensor state: {e}")
