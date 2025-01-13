@@ -1,7 +1,7 @@
 {
-    "domain": "better_cozylife",
-    "name": "CozyLife better Control",
-    "documentation": "https://github.com/iiroan/better_cozylife",
+    "domain": "bettercozylife",
+    "name": "BetterCozyLife",
+    "documentation": "https://github.com/iiroan/bettercozylife",
     "dependencies": [],
     "codeowners": [],
     "requirements": [],

@@ -9,24 +9,24 @@ from .const import *
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Set up the CozyLife Switch platform."""
+    """Set up the BetterCozyLife Switch platform."""
     if discovery_info is None:
         return
     
     devices = []
     for device_config in discovery_info:
         if device_config[CONF_DEVICE_TYPE] == DEVICE_TYPE_SWITCH:
-            devices.append(CozyLifeSwitch(device_config))
+            devices.append(BetterCozyLifeSwitch(device_config))
     
     async_add_entities(devices)
 
-class CozyLifeSwitch(SwitchEntity):
-    """Representation of a CozyLife Switch."""
+class BetterCozyLifeSwitch(SwitchEntity):
+    """Representation of a BetterCozyLife Switch."""
 
     def __init__(self, config):
         """Initialize the switch."""
         self._device = CozyLifeDevice(config[CONF_DEVICE_IP])
-        self._name = config.get(CONF_NAME, f"CozyLife Switch {config[CONF_DEVICE_IP]}")
+        self._name = config.get(CONF_NAME, f"BetterCozyLife Switch {config[CONF_DEVICE_IP]}")
         self._is_on = False
         self._available = True
 
