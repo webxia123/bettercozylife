@@ -8,7 +8,7 @@ A Home Assistant integration for Xiaomi branded CozyLife Smart Plugs. This integ
 
 [Buy it here on AliExpress](https://nl.aliexpress.com/item/1005005991851918.html)
 
-![Xiaomi CozyLife Plug](./images/plug.webp)
+<img src="./images/plug.webp" alt="Xiaomi CozyLife Plug" width="300" height="300" style="display: block; margin: 0 auto;">
 
 Features of the supported plug:
 - Local network control (no cloud required)
