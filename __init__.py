@@ -1,33 +1,30 @@
 """The BetterCozyLife integration."""
-import voluptuous as vol
-from homeassistant.const import CONF_NAME, CONF_IP_ADDRESS
-import homeassistant.helpers.config_validation as cv
-from .const import *
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
+from homeassistant.core import HomeAssistant
+import logging
+from .const import DOMAIN
 
-DEVICE_SCHEMA = vol.Schema({
-    vol.Required(CONF_IP_ADDRESS): cv.string,
-    vol.Required(CONF_TYPE): cv.string,
-    vol.Optional(CONF_NAME): cv.string,
-})
+_LOGGER = logging.getLogger(__name__)
 
-CONFIG_SCHEMA = vol.Schema({
-    DOMAIN: vol.Schema({
-        vol.Required(CONF_DEVICES): vol.All(cv.ensure_list, [DEVICE_SCHEMA])
-    })
-}, extra=vol.ALLOW_EXTRA)
+PLATFORMS = [Platform.SWITCH, Platform.LIGHT]
 
-async def async_setup(hass, config):
+async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the BetterCozyLife component."""
-    if DOMAIN not in config:
-        return True
-
-    devices = config[DOMAIN][CONF_DEVICES]
-    
-    # Setup platforms
-    hass.async_create_task(
-        hass.helpers.discovery.async_load_platform(
-            'switch', DOMAIN, devices, config
-        )
-    )
-
+    hass.data.setdefault(DOMAIN, {})
     return True
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+    """Set up BetterCozyLife from a config entry."""
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][entry.entry_id] = entry.data
+
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    return True
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+    """Unload a config entry."""
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id)
+    return unload_ok

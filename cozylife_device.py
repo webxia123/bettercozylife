@@ -16,6 +16,20 @@ class CozyLifeDevice:
         self.port = port
         self._socket = None
 
+    def test_connection(self):
+        """Test if we can connect to the device."""
+        try:
+            self._ensure_connection()
+            # Try to query device state
+            result = self.query_state()
+            return result is not None
+        except Exception:
+            return False
+        finally:
+            if self._socket:
+                self._socket.close()
+                self._socket = None
+
     def _ensure_connection(self):
         """Ensure connection is established."""
         if self._socket is None:

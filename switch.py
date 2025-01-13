@@ -1,33 +1,22 @@
 """Platform for switch integration."""
-import voluptuous as vol
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.const import CONF_NAME, CONF_IP_ADDRESS
-import logging
+from .const import DOMAIN, DEVICE_TYPE_SWITCH, CONF_DEVICE_TYPE
 from .cozylife_device import CozyLifeDevice
-from .const import (
-    DOMAIN,
-    SWITCH_TYPE_CODE,
-    LIGHT_TYPE_CODE,
-    CMD_SET,
-    CMD_QUERY,
-    CMD_INFO,
-    CONF_DEVICE_TYPE,
-    DEVICE_TYPE_SWITCH
-)
 
-_LOGGER = logging.getLogger(__name__)
-
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Set up the BetterCozyLife Switch platform."""
-    if discovery_info is None:
-        return
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up the BetterCozyLife Switch."""
+    config = config_entry.data
     
-    devices = []
-    for device_config in discovery_info:
-        if device_config[CONF_DEVICE_TYPE] == DEVICE_TYPE_SWITCH:
-            devices.append(BetterCozyLifeSwitch(device_config))
-    
-    async_add_entities(devices)
+    if config[CONF_DEVICE_TYPE] == DEVICE_TYPE_SWITCH:
+        async_add_entities([BetterCozyLifeSwitch(config)])
 
 class BetterCozyLifeSwitch(SwitchEntity):
     """Representation of a BetterCozyLife Switch."""
