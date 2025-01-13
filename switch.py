@@ -4,6 +4,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.const import CONF_NAME, CONF_IP_ADDRESS
+from homeassistant.helpers.entity import DeviceInfo
 from .const import DOMAIN, DEVICE_TYPE_SWITCH, CONF_DEVICE_TYPE
 from .cozylife_device import CozyLifeDevice
 
@@ -16,17 +17,37 @@ async def async_setup_entry(
     config = config_entry.data
     
     if config[CONF_DEVICE_TYPE] == DEVICE_TYPE_SWITCH:
-        async_add_entities([BetterCozyLifeSwitch(config)])
+        async_add_entities([BetterCozyLifeSwitch(config, config_entry.entry_id)])
 
 class BetterCozyLifeSwitch(SwitchEntity):
     """Representation of a BetterCozyLife Switch."""
 
-    def __init__(self, config):
+    def __init__(self, config, entry_id):
         """Initialize the switch."""
         self._device = CozyLifeDevice(config[CONF_IP_ADDRESS])
         self._name = config.get(CONF_NAME, f"BetterCozyLife Switch {config[CONF_IP_ADDRESS]}")
+        self._ip = config[CONF_IP_ADDRESS]
+        self._entry_id = entry_id
+        self._attr_has_entity_name = True
         self._is_on = False
         self._available = True
+
+    @property
+    def unique_id(self):
+        """Return a unique ID."""
+        return f"bettercozylife_switch_{self._ip}"
+
+    @property
+    def device_info(self):
+        """Return device information about this switch."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._ip)},
+            name=self._name,
+            manufacturer="CozyLife",
+            model="Smart Switch",
+            sw_version="1.0",
+            via_device=(DOMAIN, self._entry_id),
+        )
 
     @property
     def name(self):

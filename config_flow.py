@@ -8,7 +8,7 @@ import homeassistant.helpers.config_validation as cv
 from typing import Any
 import socket
 import logging
-from .const import DOMAIN, CONF_DEVICE_TYPE, DEVICE_TYPE_SWITCH, DEVICE_TYPE_LIGHT
+from .const import DOMAIN, CONF_DEVICE_TYPE, DEVICE_TYPE_SWITCH
 from .cozylife_device import CozyLifeDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -47,8 +47,8 @@ class BetterCozyLifeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema({
                 vol.Required(CONF_IP_ADDRESS): str,
                 vol.Required(CONF_DEVICE_TYPE, default=DEVICE_TYPE_SWITCH): vol.In([
-                    DEVICE_TYPE_SWITCH,
-                    DEVICE_TYPE_LIGHT
+                    DEVICE_TYPE_SWITCH
+                
                 ]),
                 vol.Optional(CONF_NAME): str,
             }),
