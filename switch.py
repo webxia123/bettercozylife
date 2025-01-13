@@ -82,11 +82,6 @@ class BetterCozyLifeSwitch(SwitchEntity):
             _LOGGER.error(f"Error initializing switch state: {e}")
 
     @property
-    def entity_picture(self):
-        """Return the entity picture."""
-        return "https://raw.githubusercontent.com/IIRoan/bettercozylife/refs/heads/main/icons/bettercozylife.svg"
-
-    @property
     def unique_id(self):
         """Return a unique ID."""
         return f"bettercozylife_switch_{self._ip}"

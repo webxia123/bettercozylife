@@ -110,11 +110,6 @@ class BetterCozyLifePowerSensor(SensorEntity):
             self._handle_error(f"Error initializing power sensor state: {e}")
 
     @property
-    def entity_picture(self):
-        """Return the entity picture."""
-        return "https://raw.githubusercontent.com/IIRoan/bettercozylife/refs/heads/main/icons/bettercozylife.svg"
-
-    @property
     def available(self) -> bool:
         """Return True if entity is available."""
         return self._available
