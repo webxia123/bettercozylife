@@ -7,12 +7,12 @@
                 "data": {
                     "ip_address": "IP Address",
                     "type": "Device Type",
-                    "name": "Name (Optional)"
+                    "name": "Name"
                 }
             }
         },
         "error": {
-            "cannot_connect": "Failed to connect to device"
+            "cannot_connect": "Failed to connect to device, is the configuration correct?"
         },
         "abort": {
             "already_configured": "Device is already configured"
