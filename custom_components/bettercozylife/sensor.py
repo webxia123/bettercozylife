@@ -22,7 +22,7 @@ from .cozylife_device import CozyLifeDevice
 import logging
 
 _LOGGER = logging.getLogger(__name__)
-SCAN_INTERVAL = timedelta(seconds=10)
+SCAN_INTERVAL = timedelta(seconds=5)
 TIMEOUT = 5
 
 async def async_setup_entry(
