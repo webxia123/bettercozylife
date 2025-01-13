@@ -7,7 +7,7 @@ from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.SWITCH] 
+PLATFORMS = [Platform.SWITCH, Platform.SENSOR]
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the BetterCozyLife component."""
