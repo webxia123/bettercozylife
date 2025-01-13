@@ -3,6 +3,7 @@ import socket
 import json
 import time
 import logging
+from .const import CMD_SET, CMD_QUERY, CMD_INFO
 
 _LOGGER = logging.getLogger(__name__)
 

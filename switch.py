@@ -1,10 +1,19 @@
 """Platform for switch integration."""
 import voluptuous as vol
 from homeassistant.components.switch import SwitchEntity
-from homeassistant.const import CONF_NAME
+from homeassistant.const import CONF_NAME, CONF_IP_ADDRESS
 import logging
 from .cozylife_device import CozyLifeDevice
-from .const import *
+from .const import (
+    DOMAIN,
+    SWITCH_TYPE_CODE,
+    LIGHT_TYPE_CODE,
+    CMD_SET,
+    CMD_QUERY,
+    CMD_INFO,
+    CONF_DEVICE_TYPE,
+    DEVICE_TYPE_SWITCH
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,8 +34,8 @@ class BetterCozyLifeSwitch(SwitchEntity):
 
     def __init__(self, config):
         """Initialize the switch."""
-        self._device = CozyLifeDevice(config[CONF_DEVICE_IP])
-        self._name = config.get(CONF_NAME, f"BetterCozyLife Switch {config[CONF_DEVICE_IP]}")
+        self._device = CozyLifeDevice(config[CONF_IP_ADDRESS])
+        self._name = config.get(CONF_NAME, f"BetterCozyLife Switch {config[CONF_IP_ADDRESS]}")
         self._is_on = False
         self._available = True
 
