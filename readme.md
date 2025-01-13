@@ -4,7 +4,7 @@ A Home Assistant integration for Xiaomi branded CozyLife Smart Plugs. This integ
 ![CozyLife Logo](./images/icon.png)
 
 ## Supported Devices
-⚠️ **IMPORTANT: This integration ONLY works with the CozyLife or Xiaomi-branded Cozylife Smart Plug!**
+⚠️ **IMPORTANT: This integration is ONLY tested with the CozyLife or Xiaomi-branded Cozylife Smart Plugs!**
 
 [Buy it here on AliExpress](https://nl.aliexpress.com/item/1005005991851918.html)
 
