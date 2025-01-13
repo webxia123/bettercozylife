@@ -1,33 +1,23 @@
-"""The BetterCozyLife integration."""
-import voluptuous as vol
-from homeassistant.const import CONF_NAME
-import homeassistant.helpers.config_validation as cv
-from .const import *
+"""Constants for the BetterCozyLife integration."""
+from homeassistant.const import (
+    CONF_NAME,
+    CONF_IP_ADDRESS,
+    CONF_TYPE,
+)
 
-DEVICE_SCHEMA = vol.Schema({
-    vol.Required(CONF_DEVICE_IP): cv.string,
-    vol.Required(CONF_DEVICE_TYPE): cv.string,
-    vol.Optional(CONF_NAME): cv.string,
-})
+DOMAIN = "bettercozylife"
 
-CONFIG_SCHEMA = vol.Schema({
-    DOMAIN: vol.Schema({
-        vol.Required(CONF_DEVICES): vol.All(cv.ensure_list, [DEVICE_SCHEMA])
-    })
-}, extra=vol.ALLOW_EXTRA)
+CONF_DEVICES = "devices"
+CONF_DEVICE_IP = CONF_IP_ADDRESS
+CONF_DEVICE_TYPE = CONF_TYPE
 
-async def async_setup(hass, config):
-    """Set up the BetterCozyLife component."""
-    if DOMAIN not in config:
-        return True
+DEVICE_TYPE_SWITCH = "switch"
+DEVICE_TYPE_LIGHT = "light"
 
-    devices = config[DOMAIN][CONF_DEVICES]
-    
-    # Setup platforms
-    hass.async_create_task(
-        hass.helpers.discovery.async_load_platform(
-            'switch', DOMAIN, devices, config
-        )
-    )
+# Device specific constants
+SWITCH_TYPE_CODE = '00'
+LIGHT_TYPE_CODE = '01'
 
-    return True
+CMD_INFO = 0
+CMD_QUERY = 2
+CMD_SET = 3

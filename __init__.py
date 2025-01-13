@@ -1,12 +1,12 @@
-"""The CozyLife Direct Control integration."""
+"""The BetterCozyLife integration."""
 import voluptuous as vol
-from homeassistant.const import CONF_NAME
+from homeassistant.const import CONF_NAME, CONF_IP_ADDRESS
 import homeassistant.helpers.config_validation as cv
 from .const import *
 
 DEVICE_SCHEMA = vol.Schema({
-    vol.Required(CONF_DEVICE_IP): cv.string,
-    vol.Required(CONF_DEVICE_TYPE): cv.string,
+    vol.Required(CONF_IP_ADDRESS): cv.string,
+    vol.Required(CONF_TYPE): cv.string,
     vol.Optional(CONF_NAME): cv.string,
 })
 
@@ -17,7 +17,7 @@ CONFIG_SCHEMA = vol.Schema({
 }, extra=vol.ALLOW_EXTRA)
 
 async def async_setup(hass, config):
-    """Set up the CozyLife Direct Control component."""
+    """Set up the BetterCozyLife component."""
     if DOMAIN not in config:
         return True
 
