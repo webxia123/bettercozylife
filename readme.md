@@ -1,14 +1,14 @@
 # BetterCozyLife
-A Home Assistant integration for Xiaomi branded CozyLife Smart Plugs. This integration provides local control and power monitoring capabilities.
+A Home Assistant integration for CozyLife Smart Plugs. This integration provides local control and power monitoring capabilities.
 
 ![CozyLife Logo](./images/icon.png)
 
 ## Supported Devices
-⚠️ **IMPORTANT: This integration is ONLY tested with the CozyLife or Xiaomi-branded Cozylife Smart Plugs!**
+⚠️ **IMPORTANT: This integration is ONLY tested with the CozyLife Smart Plugs not their other products!**
 
 [Buy it here on AliExpress](https://nl.aliexpress.com/item/1005005991851918.html)
 
-<img src="./images/plug.webp" alt="Xiaomi CozyLife Plug" width="300" height="300" style="display: block; margin: 0 auto;">
+<img src="./images/plug.webp" alt="CozyLife Plug" width="300" height="300" style="display: block; margin: 0 auto;">
 
 Features of the supported plug:
 - Local network control (no cloud required)
