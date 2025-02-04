@@ -95,7 +95,6 @@ class BetterCozyLifeSwitch(SwitchEntity):
             manufacturer="CozyLife",
             model="Smart Switch",
             sw_version="1.0",
-            via_device=(DOMAIN, self._entry_id),
         )
 
     @property

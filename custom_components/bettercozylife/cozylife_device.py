@@ -15,6 +15,10 @@ class CozyLifeDevice:
         self.ip = ip
         self.port = port
         self._socket = None
+        self._connect_timeout = 3
+        self._read_timeout = 2
+        self._last_connect_attempt = 0
+        self._connect_retry_delay = 30  # Seconds between connection attempts
 
     def test_connection(self):
         """Test if we can connect to the device."""
@@ -26,27 +30,72 @@ class CozyLifeDevice:
         except Exception:
             return False
         finally:
-            if self._socket:
-                self._socket.close()
-                self._socket = None
+            self._close_connection()
 
     def _ensure_connection(self):
         """Ensure connection is established."""
-        if self._socket is None:
+        current_time = time.time()
+        
+        # If connection exists, return True
+        if self._socket is not None:
+            return True
+            
+        # Check if we should retry connection
+        if (current_time - self._last_connect_attempt) < self._connect_retry_delay:
+            return False
+
+        self._last_connect_attempt = current_time
+        
+        try:
+            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._socket.settimeout(self._connect_timeout)
+            self._socket.connect((self.ip, self.port))
+            return True
+        except Exception as e:
+            _LOGGER.debug(f"Connection failed to {self.ip}: {e}")
+            self._close_connection()
+            return False
+
+    def _close_connection(self):
+        """Close the connection safely."""
+        if self._socket:
             try:
-                self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self._socket.settimeout(3)
-                self._socket.connect((self.ip, self.port))
-                return True
-            except Exception as e:
-                _LOGGER.error(f"Connection failed to {self.ip}: {e}")
+                self._socket.close()
+            except Exception:
+                pass
+            finally:
                 self._socket = None
-                return False
-        return True
 
     def _get_sn(self):
         """Generate sequence number."""
         return str(int(round(time.time() * 1000)))
+
+    def _read_response(self):
+        """Read response from socket with proper handling of multiple JSON objects."""
+        if not self._socket:
+            return None
+
+        try:
+            self._socket.settimeout(self._read_timeout)
+            data = ""
+            while True:
+                chunk = self._socket.recv(1024).decode('utf-8')
+                if not chunk:
+                    break
+                data += chunk
+                if '\n' in data:
+                    # Take only the first complete JSON object
+                    json_data = data.split('\n')[0]
+                    try:
+                        return json.loads(json_data)
+                    except json.JSONDecodeError:
+                        continue
+        except socket.timeout:
+            _LOGGER.debug(f"Read timeout from {self.ip}")
+        except Exception as e:
+            _LOGGER.debug(f"Error reading from {self.ip}: {e}")
+        
+        return None
 
     def _send_message(self, command):
         """Send message to device."""
@@ -56,11 +105,10 @@ class CozyLifeDevice:
         try:
             payload = json.dumps(command) + "\r\n"
             self._socket.send(payload.encode('utf-8'))
-            response = self._socket.recv(1024)
-            return json.loads(response.decode('utf-8'))
+            return self._read_response()
         except Exception as e:
-            _LOGGER.error(f"Failed to communicate with {self.ip}: {e}")
-            self._socket = None
+            _LOGGER.debug(f"Failed to communicate with {self.ip}: {e}")
+            self._close_connection()
             return None
 
     def send_command(self, state):
