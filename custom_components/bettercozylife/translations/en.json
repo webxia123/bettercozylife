@@ -7,7 +7,7 @@
                 "data": {
                     "ip_address": "IP Address",
                     "type": "Device Type",
-                    "name": "Name (Optional)"
+                    "name": "Name (required)"
                 }
             }
         },

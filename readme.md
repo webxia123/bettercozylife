@@ -10,11 +10,6 @@ A Home Assistant integration for CozyLife Smart Plugs. This integration provides
 
 <img src="./images/plug.webp" alt="CozyLife Plug" width="300" height="300" style="display: block; margin: 0 auto;">
 
-Features of the supported plug:
-- Local network control (no cloud required)
-- Power monitoring
-- On/Off switch
-
 ## Features
 - 🔌 Local control without cloud dependency
 - ⚡ Real-time power monitoring
