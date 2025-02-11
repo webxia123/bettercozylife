@@ -84,16 +84,12 @@ class CozyLifeDevice:
                     break
                 data += chunk
                 if '\n' in data:
-                    # Take only the first line
+                    # Take only the first complete JSON object
                     json_data = data.split('\n')[0]
                     try:
                         return json.loads(json_data)
                     except json.JSONDecodeError:
-                        _LOGGER.debug(f"Invalid JSON received from {self.ip}, ignoring")
-                        # Continue with next chunk if this one is invalid
-                        data = data.split('\n', 1)[1] if '\n' in data else ""
                         continue
-                    
         except socket.timeout:
             _LOGGER.debug(f"Read timeout from {self.ip}")
         except Exception as e:
