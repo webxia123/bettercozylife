@@ -1,10 +1,13 @@
 # BetterCozyLife
 A Home Assistant integration for CozyLife Smart Plugs. This integration provides local control and power monitoring capabilities.
 
+
+
 ![CozyLife Logo](./images/icon.png)
 
 ## Supported Devices
 ⚠️ **IMPORTANT: This integration is ONLY tested with the CozyLife Smart Plugs not their other products!**
+Also after updating bettercozylife make sure to replug your device 
 
 [Buy it here on AliExpress](https://nl.aliexpress.com/item/1005005991851918.html)
 
