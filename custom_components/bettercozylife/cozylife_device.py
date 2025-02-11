@@ -79,21 +79,42 @@ class CozyLifeDevice:
             self._socket.settimeout(self._read_timeout)
             data = ""
             while True:
-                chunk = self._socket.recv(1024).decode('utf-8')
-                if not chunk:
-                    break
-                data += chunk
-                if '\n' in data:
-                    # Take only the first complete JSON object
-                    json_data = data.split('\n')[0]
-                    try:
-                        return json.loads(json_data)
-                    except json.JSONDecodeError:
-                        continue
+                try:
+                    chunk = self._socket.recv(1024).decode('utf-8')
+                    if not chunk:
+                        break
+                    data += chunk
+                    if '\n' in data:
+                        # Take only the first line as in original code
+                        json_data = data.split('\n')[0].strip()
+                        if not json_data:  # Skip empty lines
+                            data = data.split('\n', 1)[1] if '\n' in data else ""
+                            continue
+                        
+                        try:
+                            return json.loads(json_data)
+                        except json.JSONDecodeError:
+                            # Log the invalid JSON for debugging but don't crash
+                            _LOGGER.debug(
+                                f"Received invalid JSON from {self.ip}, skipping. "
+                                f"Length: {len(json_data)} chars"
+                            )
+                            # Move to next line if this one is invalid
+                            data = data.split('\n', 1)[1] if '\n' in data else ""
+                            continue
+                except UnicodeDecodeError:
+                    _LOGGER.debug(f"Received invalid UTF-8 data from {self.ip}, skipping")
+                    data = ""
+                    continue
+                    
         except socket.timeout:
             _LOGGER.debug(f"Read timeout from {self.ip}")
+        except ConnectionResetError:
+            _LOGGER.debug(f"Connection reset by {self.ip}")
+            self._close_connection()
         except Exception as e:
-            _LOGGER.debug(f"Error reading from {self.ip}: {e}")
+            _LOGGER.debug(f"Error reading from {self.ip}: {str(e)}")
+            self._close_connection()
         
         return None
 
