@@ -83,33 +83,23 @@ class CozyLifeDevice:
                 if not chunk:
                     break
                 data += chunk
-                
-                # Split by newline to handle multiple responses
-                json_responses = data.split('\n')
-                
-                # Try to parse each response until a valid one is found
-                for response in json_responses:
-                    if not response.strip():
-                        continue
+                if '\n' in data:
+                    # Take only the first line
+                    json_data = data.split('\n')[0]
                     try:
-                        return json.loads(response.strip())
+                        return json.loads(json_data)
                     except json.JSONDecodeError:
+                        _LOGGER.debug(f"Invalid JSON received from {self.ip}, ignoring")
+                        # Continue with next chunk if this one is invalid
+                        data = data.split('\n', 1)[1] if '\n' in data else ""
                         continue
-                
-                # If processed all chunks and found no valid JSON, continue reading
-                if '\n' not in data:
-                    continue
-                
-                # If received a newline but couldn't parse any JSON, start fresh
-                data = ""
-                
+                    
         except socket.timeout:
             _LOGGER.debug(f"Read timeout from {self.ip}")
         except Exception as e:
             _LOGGER.debug(f"Error reading from {self.ip}: {e}")
         
         return None
-
 
     def _send_message(self, command):
         """Send message to device."""
