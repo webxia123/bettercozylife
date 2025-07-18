@@ -155,7 +155,7 @@ class CozyLifeDevice:
             'pv': 0,
             'sn': self._get_sn(),
             'msg': {
-                'attr': [0]
+                'attr': [1, 27, 28, 29]
             }
         }
         response = self._send_message(command)
