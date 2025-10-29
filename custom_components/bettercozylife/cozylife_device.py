@@ -18,7 +18,8 @@ class CozyLifeDevice:
         self._connect_timeout = 3
         self._read_timeout = 2
         self._last_connect_attempt = 0
-        self._connect_retry_delay = 30  # Seconds between connection attempts
+        # Seconds between connection attempts (backoff window)
+        self._connect_retry_delay = 10
 
     def test_connection(self):
         """Test if we can connect to the device."""
@@ -55,6 +56,13 @@ class CozyLifeDevice:
             _LOGGER.debug(f"Connection failed to {self.ip}: {e}")
             self._close_connection()
             return False
+
+    def is_backing_off(self):
+        """Return True if currently in connection backoff window without a socket."""
+        if self._socket is not None:
+            return False
+        current_time = time.time()
+        return (current_time - self._last_connect_attempt) < self._connect_retry_delay
 
     def _close_connection(self):
         """Close the connection safely."""
