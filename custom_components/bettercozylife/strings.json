@@ -22,11 +22,13 @@
         "step": {
             "init": {
                 "title": "BetterCozyLife Options",
-                "description": "Update IP, name, and failure threshold",
+                "description": "Update IP, name, failure threshold, timeout, and retry window",
                 "data": {
                     "ip_address": "IP Address",
                     "name": "Name",
-                    "failure_threshold": "Failure Threshold (consecutive)"
+                    "failure_threshold": "Failure Threshold (consecutive)",
+                    "timeout": "Socket Timeout (seconds)",
+                    "retry_window": "Retry Window (seconds)"
                 }
             }
         },

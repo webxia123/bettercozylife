@@ -10,16 +10,17 @@ _LOGGER = logging.getLogger(__name__)
 class CozyLifeDevice:
     """Class to communicate with CozyLife devices."""
 
-    def __init__(self, ip, port=5555):
+    def __init__(self, ip, port=5555, timeout=3, retry_window=10):
         """Initialize the device."""
         self.ip = ip
         self.port = port
         self._socket = None
-        self._connect_timeout = 3
-        self._read_timeout = 2
+        # Use shared timeout for connect and read to simplify configuration
+        self._connect_timeout = max(float(timeout), 0.1)
+        self._read_timeout = max(float(timeout), 0.1)
         self._last_connect_attempt = 0
         # Seconds between connection attempts (backoff window)
-        self._connect_retry_delay = 10
+        self._connect_retry_delay = max(float(retry_window), 0)
 
     def test_connection(self):
         """Test if we can connect to the device."""

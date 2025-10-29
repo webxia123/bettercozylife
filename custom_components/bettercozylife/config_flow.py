@@ -3,12 +3,20 @@ from __future__ import annotations
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import CONF_NAME, CONF_IP_ADDRESS
+from homeassistant.const import CONF_NAME, CONF_IP_ADDRESS, CONF_TIMEOUT
 import homeassistant.helpers.config_validation as cv
 from typing import Any
-import socket
 import logging
-from .const import DOMAIN, CONF_DEVICE_TYPE, DEVICE_TYPE_SWITCH, CONF_FAILURE_THRESHOLD, DEFAULT_FAILURE_THRESHOLD
+from .const import (
+    DOMAIN,
+    CONF_DEVICE_TYPE,
+    DEVICE_TYPE_SWITCH,
+    CONF_FAILURE_THRESHOLD,
+    DEFAULT_FAILURE_THRESHOLD,
+    CONF_RETRY_WINDOW,
+    DEFAULT_TIMEOUT,
+    DEFAULT_RETRY_WINDOW,
+)
 from .cozylife_device import CozyLifeDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -25,7 +33,7 @@ class BetterCozyLifeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             try:
                 # Test connection to device
-                device = CozyLifeDevice(user_input[CONF_IP_ADDRESS])
+                device = CozyLifeDevice(user_input[CONF_IP_ADDRESS], timeout=DEFAULT_TIMEOUT, retry_window=DEFAULT_RETRY_WINDOW)
                 if await self.hass.async_add_executor_job(device.test_connection):
                     # Create unique ID from IP address
                     await self.async_set_unique_id(user_input[CONF_IP_ADDRESS])
@@ -76,7 +84,10 @@ class BetterCozyLifeOptionsFlowHandler(config_entries.OptionsFlow):
 
             # Validate connectivity to new IP
             try:
-                device = CozyLifeDevice(new_ip)
+                timeout = float(user_input.get(CONF_TIMEOUT, self.config_entry.options.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)))
+                retry_window = float(user_input.get(CONF_RETRY_WINDOW, self.config_entry.options.get(CONF_RETRY_WINDOW, DEFAULT_RETRY_WINDOW)))
+
+                device = CozyLifeDevice(new_ip, timeout=timeout, retry_window=retry_window)
                 ok = await self.hass.async_add_executor_job(device.test_connection)
                 if not ok:
                     errors["base"] = "cannot_connect"
@@ -90,6 +101,8 @@ class BetterCozyLifeOptionsFlowHandler(config_entries.OptionsFlow):
                         new_data.pop(CONF_NAME, None)
                     new_options = dict(self.config_entry.options)
                     new_options[CONF_FAILURE_THRESHOLD] = int(failure_threshold)
+                    new_options[CONF_TIMEOUT] = timeout
+                    new_options[CONF_RETRY_WINDOW] = retry_window
 
                     await self.hass.config_entries.async_update_entry(
                         self.config_entry,
@@ -109,6 +122,12 @@ class BetterCozyLifeOptionsFlowHandler(config_entries.OptionsFlow):
         # Show form with current values
         current = self.config_entry.data
         current_options = self.config_entry.options
+        if user_input is not None:
+            current_timeout = user_input.get(CONF_TIMEOUT, current_options.get(CONF_TIMEOUT, DEFAULT_TIMEOUT))
+            current_retry = user_input.get(CONF_RETRY_WINDOW, current_options.get(CONF_RETRY_WINDOW, DEFAULT_RETRY_WINDOW))
+        else:
+            current_timeout = current_options.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
+            current_retry = current_options.get(CONF_RETRY_WINDOW, DEFAULT_RETRY_WINDOW)
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
@@ -119,6 +138,14 @@ class BetterCozyLifeOptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_FAILURE_THRESHOLD,
                         default=current_options.get(CONF_FAILURE_THRESHOLD, DEFAULT_FAILURE_THRESHOLD),
                     ): cv.positive_int,
+                    vol.Required(
+                        CONF_TIMEOUT,
+                        default=current_timeout,
+                    ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=60)),
+                    vol.Required(
+                        CONF_RETRY_WINDOW,
+                        default=current_retry,
+                    ): vol.All(vol.Coerce(float), vol.Range(min=0, max=600)),
                 }
             ),
             errors=errors,

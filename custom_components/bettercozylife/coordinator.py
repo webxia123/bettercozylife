@@ -18,7 +18,14 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from .cozylife_device import CozyLifeDevice
-from .const import CONF_FAILURE_THRESHOLD, DEFAULT_FAILURE_THRESHOLD
+from .const import (
+    CONF_FAILURE_THRESHOLD,
+    DEFAULT_FAILURE_THRESHOLD,
+    CONF_TIMEOUT,
+    DEFAULT_TIMEOUT,
+    CONF_RETRY_WINDOW,
+    DEFAULT_RETRY_WINDOW,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,10 +37,19 @@ class CozyLifeCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
         self.hass = hass
         self.entry = entry
         self.ip = entry.data[CONF_IP_ADDRESS]
-        self.device = CozyLifeDevice(self.ip)
+        try:
+            self.socket_timeout = float(entry.options.get(CONF_TIMEOUT, DEFAULT_TIMEOUT))
+        except (TypeError, ValueError):
+            self.socket_timeout = float(DEFAULT_TIMEOUT)
+        try:
+            self.retry_window = float(entry.options.get(CONF_RETRY_WINDOW, DEFAULT_RETRY_WINDOW))
+        except (TypeError, ValueError):
+            self.retry_window = float(DEFAULT_RETRY_WINDOW)
+        self.device = CozyLifeDevice(self.ip, timeout=self.socket_timeout, retry_window=self.retry_window)
         self.consecutive_failures = 0
         # Read from options, fallback to default
         self.failure_threshold = entry.options.get(CONF_FAILURE_THRESHOLD, DEFAULT_FAILURE_THRESHOLD)
+        self._request_timeout = max(self.socket_timeout + 2, self.socket_timeout * 2, 5)
 
         super().__init__(
             hass,
@@ -50,7 +66,7 @@ class CozyLifeCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
     async def _async_update_data(self) -> Dict[str, Any]:
         """Fetch data from device."""
         try:
-            async with async_timeout.timeout(5):
+            async with async_timeout.timeout(self._request_timeout):
                 state = await self.hass.async_add_executor_job(self.device.query_state)
         except (asyncio.TimeoutError, Exception) as err:
             _LOGGER.debug("Coordinator update error for %s: %s", self.ip, err)

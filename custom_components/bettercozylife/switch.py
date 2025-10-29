@@ -50,7 +50,7 @@ class BetterCozyLifeSwitch(CoordinatorEntity[CozyLifeCoordinator], SwitchEntity)
             name=self._name,
             manufacturer="CozyLife",
             model="Smart Switch",
-            sw_version="2.0",
+            sw_version="2.1",
         )
 
     @property
