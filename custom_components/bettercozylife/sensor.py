@@ -58,7 +58,7 @@ class BaseBetterCozyLifeSensor(CoordinatorEntity[CozyLifeCoordinator], SensorEnt
             name=base_name,
             manufacturer="CozyLife",
             model="Smart Switch",
-            sw_version="1.0",
+            sw_version="2.0",
         )
 
     @property
